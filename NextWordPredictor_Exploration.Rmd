@@ -1,0 +1,32 @@
+---
+title: "Next Word Prediction - Exploratory Analysis"
+author: "Ash Chakraborty"
+date: "March 15, 2016"
+output: html_document
+---
+
+```{r global, echo=FALSE, message=FALSE, warning=FALSE, error=FALSE}
+library(ggplot2)
+library(tm)
+```  
+
+# Overview  
+
+As engagement with mobile devices becomes second nature for us, we're experiencing more effective means of capturing the intended content of communication on these devices, viz. dynamic spell-checkers, swipe-able keyboards, and **next word predictors**. The aim of this analysis is to lay the foundations for a word prediction app. that may be used in a similar vain to that of [Swiftkey's](https://swiftkey.com/en/company) next word prediction feature in their keyboard application.  
+
+Specifically, this report's objectives are the following:  
+* Load and clean the input datasets required to train the prediction model,  
+* Explore summary statistics and analyze the dataset for other revelations,  
+* Layout a blueprint for the prediction algorithm and the prediction application.  
+
+# Data  
+ 
+This exercise uses the files named _LOCALE.blogs.txt_ where _LOCALE_ is each of the four locales en_US, de_DE, ru_RU and fi_FI. The data is from a corpus called [HC Corpora](www.corpora.heliohost.org). From the site: _HC corpora is a collection of corpora for various languages freely available to download. The corpora have been collected from numerous different webpages, with the aim of getting a varied and comprehensive corpus of current use of the respective language._  
+
+I first read in the files and unpack them into what turns out to be very large character vectors:  
+
+
+
+# Tidying Text
+## Preprocessing (removing punctuation? stopword? stemming)
+## Transforamtion: Convert to term document matrix (also stemming)
