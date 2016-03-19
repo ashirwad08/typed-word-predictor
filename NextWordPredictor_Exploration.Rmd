@@ -23,10 +23,96 @@ Specifically, this report's objectives are the following:
  
 This exercise uses the files named _LOCALE.blogs.txt_ where _LOCALE_ is each of the four locales en_US, de_DE, ru_RU and fi_FI. The data is from a corpus called [HC Corpora](www.corpora.heliohost.org). From the site: _HC corpora is a collection of corpora for various languages freely available to download. The corpora have been collected from numerous different webpages, with the aim of getting a varied and comprehensive corpus of current use of the respective language._  
 
-I first read in the files and unpack them into what turns out to be very large character vectors:  
+I first read in the text files and unpack them into what turns out to be very large Corpora containing the following corpus types:  
+
+```{r input, echo=FALSE}
+filePath <- '/Users/ash/Downloads/final/en_US/'
+corp <- Corpus(DirSource(filePath))
+```  
+
+* Blog Text: A collection of blog posts of total size ```r round(object.size(corp[[1]][1])/1024)``` Mb.  
+
+* News Text: A collection of news articles of total size ```r round(object.size(corp[[2]][1])/1024)``` Mb.  
+
+* Twitter Tweets: A collection of Tweets of total size ```r round(object.size(corp[[1]][1])/1024)``` Mb.  
+
+## Word Tokenizing and Normalization  
+
+Each of the corpus(es?) in the Corpora are stored in three character vectors in the "corp" logical object. In order to get a better understanding of each, it is necessary to first perform the following pre-processing steps:  
+
+### Lowercase  
+
+* Blogs: Convert to lowercase to get a sense of word distributions. Acronyms aren't very domain relevant in this case so those needn't be preserved;  
+* News: Acronyms might have greater impact here. Preserve uppercase. Also since news sources are usually professionally curated and exhibit a stricter adherence to grammatical rules for caps and acronyms;  
+* Tweets: Convert to lowercase  
+
+```{r lower, echo=FALSE}
+#blogs
+corp[[1]][[1]] <- tolower(corp[[1]][[1]])
+
+#news - not forcing lowercase
+#corp[[2]][[1]] <- tolower(corp[[2]][[1]])
+
+#tweets
+corp[[3]][[1]] <- tolower(corp[[3]][[1]])
+
+```  
+
+
+### Punctuation Characters  
+
+Attempt to remove special characters that result in emoticons, that are apostrophes, periods, commas, semicolons, excessive punctuation.  
+
+Exceptions: Preserve the octothorpe "#" character in the Tweets corpora to analyze significance of tweeted hashtag context.
+
+```{r frags, echo=FALSE}
+#strip punctuation characters from blogs and news corpora
+corp[[1]][[1]] <- removePunctuation(corp[[1]][[1]], preserve_intra_word_dashes = FALSE)
+
+#preserve the "-" in news articles
+corp[[2]][[1]] <- removePunctuation(corp[[2]][[1]], preserve_intra_word_dashes = TRUE)
+
+#strip all but octothorpe from twitter dataset
+corp[[3]][[1]] <- gsub('[!"$%&\'()*+,-./:;<=>?@\\^_`|~]','',corp[[3]][[1]])
+
+```  
+
+### Lemmatization  
+
+For the entire Corpora, we want to consider equivalency relations for the following strings: 
+
+
+### Stop Words  
+
+```{r stopwords, echo=FALSE}
+corp <- tm_map(corp, removeWords, stopwords("english"))
+```  
+
+
+### Stemming  
+
+We chop the word *affixes* from their *stems* to improve token counts.  
+
+```{r stemming, echo=FALSE}
+corp <- tm_map(corp, stemDocument)
+
+#remove unecessary whitespace
+corp <- tm_map(corp, stripWhitespace)
+
+#treat the pre-processed document as plain text document
+corp <- tm_map(corp, PlainTextDocument)
+```   
+
+## Document Term Matrix  
+
+
+```{r dtm, echo=FALSE}
+
+system.time(dtm <- DocumentTermMatrix(corp))
+
+```
 
 
 
-# Tidying Text
-## Preprocessing (removing punctuation? stopword? stemming)
-## Transforamtion: Convert to term document matrix (also stemming)
+
+
