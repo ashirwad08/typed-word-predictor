@@ -8,6 +8,7 @@ output: html_document
 ```{r global, echo=FALSE, message=FALSE, warning=FALSE, error=FALSE}
 library(ggplot2)
 library(tm)
+library(tm.plugin.dc)
 ```  
 
 # Overview  
@@ -30,31 +31,37 @@ filePath <- '/Users/ash/Downloads/final/en_US/'
 corp <- Corpus(DirSource(filePath))
 ```  
 
-* Blog Text: A collection of blog posts of total size ```r round(object.size(corp[[1]][1])/1024)``` Mb.  
+* Blog Text: A collection of blog posts of total size ```r round(object.size(corp[[1]][1])/1024)``` Kb, and ```r length(corp[[1]][[1]])``` lines.  
 
-* News Text: A collection of news articles of total size ```r round(object.size(corp[[2]][1])/1024)``` Mb.  
+* News Text: A collection of news articles of total size ```r round(object.size(corp[[2]][1])/1024)``` Kb, and ```r length(corp[[2]][[1]])``` lines.  
 
-* Twitter Tweets: A collection of Tweets of total size ```r round(object.size(corp[[1]][1])/1024)``` Mb.  
+* Twitter Tweets: A collection of Tweets of total size ```r round(object.size(corp[[1]][1])/1024)``` Kb, and ```r length(corp[[3]][[1]])``` lines.  
 
 ## Word Tokenizing and Normalization  
 
 Each of the corpus(es?) in the Corpora are stored in three character vectors in the "corp" logical object. In order to get a better understanding of each, it is necessary to first perform the following pre-processing steps:  
 
-### Lowercase  
+### Lowercase and Numbers 
 
 * Blogs: Convert to lowercase to get a sense of word distributions. Acronyms aren't very domain relevant in this case so those needn't be preserved;  
 * News: Acronyms might have greater impact here. Preserve uppercase. Also since news sources are usually professionally curated and exhibit a stricter adherence to grammatical rules for caps and acronyms;  
 * Tweets: Convert to lowercase  
 
 ```{r lower, echo=FALSE}
-#blogs
+
+#corp <- tm_map(corp, tolower)
+
+# #blogs
 corp[[1]][[1]] <- tolower(corp[[1]][[1]])
-
-#news - not forcing lowercase
-#corp[[2]][[1]] <- tolower(corp[[2]][[1]])
-
-#tweets
+# 
+# #news - not forcing lowercase
+corp[[2]][[1]] <- tolower(corp[[2]][[1]])
+# 
+# #tweets
 corp[[3]][[1]] <- tolower(corp[[3]][[1]])
+
+#remove all numbers
+corp <- tm_map(corp, removeNumbers)
 
 ```  
 
@@ -75,12 +82,45 @@ corp[[2]][[1]] <- removePunctuation(corp[[2]][[1]], preserve_intra_word_dashes =
 #strip all but octothorpe from twitter dataset
 corp[[3]][[1]] <- gsub('[!"$%&\'()*+,-./:;<=>?@\\^_`|~]','',corp[[3]][[1]])
 
+#remove unecessary whitespace
+corp <- tm_map(corp, stripWhitespace)
+
 ```  
 
-### Lemmatization  
+### Document Summaries  
 
-For the entire Corpora, we want to consider equivalency relations for the following strings: 
+The following table shows the approximate token and type counts for each document type:  
 
+```{r tokentype, echo=FALSE}
+
+docSumm <- data.frame(document.source = 'Blogs', 
+                     size_MB = round(object.size(corp[[1]][1])/(2^20))[[1]],
+                     lines = length(corp[[1]][[1]]),
+                     tokens = sum(unlist(lapply(corp[[1]][[1]], 
+                                                function(x){
+                                                        length(stri_split_fixed(x," ", 
+                                                                                omit_empty = TRUE)[[1]])
+                                                        }))))
+docSumm <- rbind(docSumm, data.frame(document.source = 'News', 
+                 size_MB = round(object.size(corp[[2]][1])/(2^20))[[1]],
+                 lines = length(corp[[2]][[1]]),
+                 tokens = sum(unlist(lapply(corp[[2]][[1]], 
+                                            function(x){
+                                                    length(stri_split_fixed(x," ", 
+                                                                            omit_empty = TRUE)[[1]])
+                                                        })))))
+docSumm <- rbind(docSumm, data.frame(document.source = 'Twitter', 
+                 size_MB = round(object.size(corp[[3]][1])/(2^20))[[1]],
+                 lines = length(corp[[3]][[1]]),
+                 tokens = sum(unlist(lapply(corp[[3]][[1]], 
+                                            function(x){
+                                                    length(stri_split_fixed(x," ", 
+                                                                            omit_empty = TRUE)[[1]])
+                                                        })))))
+
+knitr::kable(docSumm, row.names=NA,align='c', format.args=list(big.mark=','))
+
+```
 
 ### Stop Words  
 
@@ -88,27 +128,59 @@ For the entire Corpora, we want to consider equivalency relations for the follow
 corp <- tm_map(corp, removeWords, stopwords("english"))
 ```  
 
-
 ### Stemming  
 
-We chop the word *affixes* from their *stems* to improve token counts.  
+We chop the word *affixes* from their *stems* to improve type grouping.  
 
 ```{r stemming, echo=FALSE}
 corp <- tm_map(corp, stemDocument)
 
-#remove unecessary whitespace
-corp <- tm_map(corp, stripWhitespace)
+
+```  
+
+
+
+### Lemmatization  
+
+For the entire Corpora, we want to consider equivalency relations for the following strings: 
+
+
+
+```{r}
 
 #treat the pre-processed document as plain text document
 corp <- tm_map(corp, PlainTextDocument)
 ```   
 
-## Document Term Matrix  
+## Term Document Matrices 
 
 
 ```{r dtm, echo=FALSE}
 
-system.time(dtm <- DocumentTermMatrix(corp))
+#sampling from the large corpus
+
+
+sub.corp1 <- Corpus(VectorSource(c(sample(corp[[1]][[1]],
+                                           size = length(corp[[1]][[1]])*0.01,
+                                           replace = FALSE),
+                                    sample(corp[[2]][[1]],
+                                           size = length(corp[[2]][[1]])*0.01,
+                                           replace = FALSE),
+                                    sample(corp[[3]][[1]],
+                                           size = length(corp[[3]][[1]])*0.01,
+                                           replace = FALSE))))
+
+sub.corp2 <- Corpus(VectorSource(c(sample(corp[[1]][[1]],
+                                           size = length(corp[[1]][[1]])*0.01,
+                                           replace = FALSE),
+                                    sample(corp[[2]][[1]],
+                                           size = length(corp[[2]][[1]])*0.01,
+                                           replace = FALSE),
+                                    sample(corp[[3]][[1]],
+                                           size = length(corp[[3]][[1]])*0.01,
+                                           replace = FALSE))))
+
+system.time(tdm1 <- TermDocumentMatrix(sub.corp1, control = list(minWordLength=2)))
 
 ```
 
