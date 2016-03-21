@@ -8,46 +8,59 @@ output: html_document
 ```{r global, echo=FALSE, message=FALSE, warning=FALSE, error=FALSE}
 library(ggplot2)
 library(tm)
-library(tm.plugin.dc)
+#library(tm.plugin.dc)
+library(stringi)
 ```  
 
 # Overview  
 
-As engagement with mobile devices becomes second nature for us, we're experiencing more effective means of capturing the intended content of communication on these devices, viz. dynamic spell-checkers, swipe-able keyboards, and **next word predictors**. The aim of this analysis is to lay the foundations for a word prediction app. that may be used in a similar vain to that of [Swiftkey's](https://swiftkey.com/en/company) next word prediction feature in their keyboard application.  
+[Complete Code May Be Viewed in this Github Location](https://github.com/ashirwad08/typed-word-predictor/blob/master/NextWordPredictor_Exploration.Rmd)
+
+
+As engagement with mobile devices becomes second nature for us, we're experiencing more effective means of capturing the intended content of communication on these devices, *viz.* dynamic spell-checkers, swipe-able keyboards, and **next word predictors**. The aim of this analysis is to lay the foundations for a word prediction app. that may be used in a similar vain to that of [Swiftkey's](https://swiftkey.com/en/company) next word prediction feature in their keyboard application.  
 
 Specifically, this report's objectives are the following:  
 * Load and clean the input datasets required to train the prediction model,  
 * Explore summary statistics and analyze the dataset for other revelations,  
 * Layout a blueprint for the prediction algorithm and the prediction application.  
 
-# Data  
- 
+# Load and PreProcess Data  
+
 This exercise uses the files named _LOCALE.blogs.txt_ where _LOCALE_ is each of the four locales en_US, de_DE, ru_RU and fi_FI. The data is from a corpus called [HC Corpora](www.corpora.heliohost.org). From the site: _HC corpora is a collection of corpora for various languages freely available to download. The corpora have been collected from numerous different webpages, with the aim of getting a varied and comprehensive corpus of current use of the respective language._  
 
 I first read in the text files and unpack them into what turns out to be very large Corpora containing the following corpus types:  
 
-```{r input, echo=FALSE}
+* Blog Text: A collection of blog posts.  
+
+* News Text: A collection of news articles.  
+
+* Twitter Tweets: A collection of Tweets.  
+
+
+```{r input, echo=FALSE, cache=TRUE}
 filePath <- '/Users/ash/Downloads/final/en_US/'
 corp <- Corpus(DirSource(filePath))
 ```  
 
-* Blog Text: A collection of blog posts of total size ```r round(object.size(corp[[1]][1])/1024)``` Kb, and ```r length(corp[[1]][[1]])``` lines.  
 
-* News Text: A collection of news articles of total size ```r round(object.size(corp[[2]][1])/1024)``` Kb, and ```r length(corp[[2]][[1]])``` lines.  
+Before we can collect some summary statistics for each, some preliminary cleanup is needed. Specifically:  
 
-* Twitter Tweets: A collection of Tweets of total size ```r round(object.size(corp[[1]][1])/1024)``` Kb, and ```r length(corp[[3]][[1]])``` lines.  
 
 ## Word Tokenizing and Normalization  
 
 Each of the corpus(es?) in the Corpora are stored in three character vectors in the "corp" logical object. In order to get a better understanding of each, it is necessary to first perform the following pre-processing steps:  
 
-### Lowercase and Numbers 
+* Force Lowercase   
 
-* Blogs: Convert to lowercase to get a sense of word distributions. Acronyms aren't very domain relevant in this case so those needn't be preserved;  
-* News: Acronyms might have greater impact here. Preserve uppercase. Also since news sources are usually professionally curated and exhibit a stricter adherence to grammatical rules for caps and acronyms;  
-* Tweets: Convert to lowercase  
+* Remove Numbers   
 
-```{r lower, echo=FALSE}
+* Remove Punctuation Characters: Attempt to remove special characters that result in emoticons, that are apostrophes, periods, commas, semicolons, excessive punctuation. _Exceptions:_ Preserve the octothorpe "#" character in the Tweets corpus to analyze significance of tweeted hashtag context.   
+
+* Strip Unnecessary Whitespaces   
+
+
+
+```{r lowercase, echo=FALSE, cache=TRUE}
 
 #corp <- tm_map(corp, tolower)
 
@@ -65,19 +78,12 @@ corp <- tm_map(corp, removeNumbers)
 
 ```  
 
-
-### Punctuation Characters  
-
-Attempt to remove special characters that result in emoticons, that are apostrophes, periods, commas, semicolons, excessive punctuation.  
-
-Exceptions: Preserve the octothorpe "#" character in the Tweets corpora to analyze significance of tweeted hashtag context.
-
-```{r frags, echo=FALSE}
+```{r punct, echo=FALSE, cache=TRUE}
 #strip punctuation characters from blogs and news corpora
 corp[[1]][[1]] <- removePunctuation(corp[[1]][[1]], preserve_intra_word_dashes = FALSE)
 
 #preserve the "-" in news articles
-corp[[2]][[1]] <- removePunctuation(corp[[2]][[1]], preserve_intra_word_dashes = TRUE)
+corp[[2]][[1]] <- removePunctuation(corp[[2]][[1]], preserve_intra_word_dashes = FALSE)
 
 #strip all but octothorpe from twitter dataset
 corp[[3]][[1]] <- gsub('[!"$%&\'()*+,-./:;<=>?@\\^_`|~]','',corp[[3]][[1]])
@@ -89,9 +95,9 @@ corp <- tm_map(corp, stripWhitespace)
 
 ### Document Summaries  
 
-The following table shows the approximate token and type counts for each document type:  
+The following table shows the approximate token counts for each document type, after the steps above:  
 
-```{r tokentype, echo=FALSE}
+```{r docSumm1, echo=FALSE}
 
 docSumm <- data.frame(document.source = 'Blogs', 
                      size_MB = round(object.size(corp[[1]][1])/(2^20))[[1]],
@@ -100,7 +106,10 @@ docSumm <- data.frame(document.source = 'Blogs',
                                                 function(x){
                                                         length(stri_split_fixed(x," ", 
                                                                                 omit_empty = TRUE)[[1]])
-                                                        }))))
+                                                        }))),
+                     types = length(stri_unique(stri_split_fixed(
+                             stri_flatten(corp[[1]][[1]])," ", omit_empty = TRUE)[[1]])))
+
 docSumm <- rbind(docSumm, data.frame(document.source = 'News', 
                  size_MB = round(object.size(corp[[2]][1])/(2^20))[[1]],
                  lines = length(corp[[2]][[1]]),
@@ -108,7 +117,9 @@ docSumm <- rbind(docSumm, data.frame(document.source = 'News',
                                             function(x){
                                                     length(stri_split_fixed(x," ", 
                                                                             omit_empty = TRUE)[[1]])
-                                                        })))))
+                                                        }))),
+                 types = length(stri_unique(stri_split_fixed(
+                             stri_flatten(corp[[2]][[1]])," ", omit_empty = TRUE)[[1]]))))
 docSumm <- rbind(docSumm, data.frame(document.source = 'Twitter', 
                  size_MB = round(object.size(corp[[3]][1])/(2^20))[[1]],
                  lines = length(corp[[3]][[1]]),
@@ -116,7 +127,9 @@ docSumm <- rbind(docSumm, data.frame(document.source = 'Twitter',
                                             function(x){
                                                     length(stri_split_fixed(x," ", 
                                                                             omit_empty = TRUE)[[1]])
-                                                        })))))
+                                                        }))),
+                 types = length(stri_unique(stri_split_fixed(
+                             stri_flatten(corp[[3]][[1]])," ", omit_empty = TRUE)[[1]]))))
 
 knitr::kable(docSumm, row.names=NA,align='c', format.args=list(big.mark=','))
 
@@ -124,65 +137,150 @@ knitr::kable(docSumm, row.names=NA,align='c', format.args=list(big.mark=','))
 
 ### Stop Words  
 
-```{r stopwords, echo=FALSE}
+To get a better type grouping, and for better frequency analysis, we get rid of common stop words such as ```r sample(stopwords(), 10)```, etc.
+
+```{r stopwords, echo=FALSE, cache=TRUE}
 corp <- tm_map(corp, removeWords, stopwords("english"))
 ```  
 
 ### Stemming  
 
-We chop the word *affixes* from their *stems* to improve type grouping.  
+Finally, we chop the word *affixes* from their *stems* to improve type grouping and frequency analysis.  
 
-```{r stemming, echo=FALSE}
+```{r stemming, echo=FALSE, cache=TRUE}
 corp <- tm_map(corp, stemDocument)
+```  
 
+### Lemmatization  
 
+We choose not to perform any lemmatization on account of the rather generic problem domain.  
+
+## Final Document Summary  
+
+After all our pre-processing is complete, we see the following document summary:  
+
+```{r docSumm2, echo=FALSE}
+docSumm2 <- data.frame(document.source = 'Blogs', 
+                     size_MB = round(object.size(corp[[1]][1])/(2^20))[[1]],
+                     lines = length(corp[[1]][[1]]),
+                     tokens = sum(unlist(lapply(corp[[1]][[1]], 
+                                                function(x){
+                                                        length(stri_split_fixed(x," ", 
+                                                                                omit_empty = TRUE)[[1]])
+                                                        }))),
+                     types = length(stri_unique(stri_split_fixed(
+                             stri_flatten(corp[[1]][[1]])," ", omit_empty = TRUE)[[1]])))
+
+docSumm2 <- rbind(docSumm2, data.frame(document.source = 'News', 
+                 size_MB = round(object.size(corp[[2]][1])/(2^20))[[1]],
+                 lines = length(corp[[2]][[1]]),
+                 tokens = sum(unlist(lapply(corp[[2]][[1]], 
+                                            function(x){
+                                                    length(stri_split_fixed(x," ", 
+                                                                            omit_empty = TRUE)[[1]])
+                                                        }))),
+                     types = length(stri_unique(stri_split_fixed(
+                             stri_flatten(corp[[2]][[1]])," ", omit_empty = TRUE)[[1]]))))
+docSumm2 <- rbind(docSumm2, data.frame(document.source = 'Twitter', 
+                 size_MB = round(object.size(corp[[3]][1])/(2^20))[[1]],
+                 lines = length(corp[[3]][[1]]),
+                 tokens = sum(unlist(lapply(corp[[3]][[1]], 
+                                            function(x){
+                                                    length(stri_split_fixed(x," ", 
+                                                                            omit_empty = TRUE)[[1]])
+                                                        }))),
+                     types = length(stri_unique(stri_split_fixed(
+                             stri_flatten(corp[[3]][[1]])," ", omit_empty = TRUE)[[1]]))))
+
+knitr::kable(docSumm, row.names=NA,align='c', format.args=list(big.mark=','))
 ```  
 
 
 
-### Lemmatization  
+# More Summary Statistics  
 
-For the entire Corpora, we want to consider equivalency relations for the following strings: 
+On account of the Corpora being so large, I'll have to explore stats on a random sample. I'll create a "sub" corpora, sampling 2% of the original corpus.   
 
+##  Document Term Matrix
 
-
-```{r}
-
-#treat the pre-processed document as plain text document
-corp <- tm_map(corp, PlainTextDocument)
-```   
-
-## Term Document Matrices 
+First, generate the sub-corpora, then the document term matrix, which will give us the frequency of terms. The 20 most frequent terms in the this sample corpus are:  
 
 
-```{r dtm, echo=FALSE}
+
+```{r subCorpora, echo=FALSE, cache=TRUE}
 
 #sampling from the large corpus
 
-
-sub.corp1 <- Corpus(VectorSource(c(sample(corp[[1]][[1]],
-                                           size = length(corp[[1]][[1]])*0.01,
+# This results in a 100% sparse matrix. Couldn't figure out the right package to use in time.
+sub.corp1 <- VCorpus(VectorSource(c(sample(corp[[1]][[1]],
+                                           size = length(corp[[1]][[1]])*0.02,
                                            replace = FALSE),
                                     sample(corp[[2]][[1]],
-                                           size = length(corp[[2]][[1]])*0.01,
+                                           size = length(corp[[2]][[1]])*0.02,
                                            replace = FALSE),
                                     sample(corp[[3]][[1]],
-                                           size = length(corp[[3]][[1]])*0.01,
+                                           size = length(corp[[3]][[1]])*0.02,
                                            replace = FALSE))))
+# 
+# sub.corp2 <- Corpus(VectorSource(c(sample(corp[[1]][[1]],
+#                                            size = length(corp[[1]][[1]])*0.05,
+#                                            replace = FALSE),
+#                                     sample(corp[[2]][[1]],
+#                                            size = length(corp[[2]][[1]])*0.05,
+#                                            replace = FALSE),
+#                                     sample(corp[[3]][[1]],
+#                                            size = length(corp[[3]][[1]])*0.05,
+#                                            replace = FALSE))))
+#sub.corp1 <- tm_map(sub.corp1, PlainTextDocument)
 
-sub.corp2 <- Corpus(VectorSource(c(sample(corp[[1]][[1]],
-                                           size = length(corp[[1]][[1]])*0.01,
-                                           replace = FALSE),
-                                    sample(corp[[2]][[1]],
-                                           size = length(corp[[2]][[1]])*0.01,
-                                           replace = FALSE),
-                                    sample(corp[[3]][[1]],
-                                           size = length(corp[[3]][[1]])*0.01,
-                                           replace = FALSE))))
+#tdm1 <- TermDocumentMatrix(sub.corp1, control = list(minWordLength=2))
+dtm1 <- DocumentTermMatrix(sub.corp1, control = list(minWordLength=2))
+#dtm2 <- DocumentTermMatrix(sub.corp2, control = list(minWordLength=2))
 
-system.time(tdm1 <- TermDocumentMatrix(sub.corp1, control = list(minWordLength=2)))
+#ph.dtm1 <- rollup(dtm1, 2, na.rm=TRUE, FUN = sum)
 
+dtm.sp <- removeSparseTerms(dtm1, 0.999)
+
+
+#freq
+freq <- sort(colSums(as.matrix(dtm.sp)), decreasing=TRUE)
+
+knitr::kable(head(freq, 20))
+
+wf <- data.frame(word=names(freq), freq=freq)   
+
+
+```  
+
+## Summary Plots  
+
+50 of the most frequently occuring words in the sample:  
+
+```{r plotFreq, echo=FALSE, fig.width=8}
+p <- ggplot(head(wf,50), aes(word, freq ,fill=freq))    
+p + geom_bar(stat="identity") + theme(axis.text.x=element_text(angle=45, hjust=1),
+                                      panel.background=element_blank())
+   
+
+```  
+
+Finally, here's a wordcloud of words that occur at least 100 times or more in the sample corpora:  
+
+
+```{r wordcloud, echo=FALSE, warning=FALSE, message=FALSE}
+library(wordcloud)
+wordcloud(names(freq),freq,min.freq=100)
 ```
+
+
+
+
+# Prediction Application  
+
+So far I've settled on using a multi-gram Bayesian model to act as the predictor for the word prediction application. I'll experiment with tri-grams and quad-grams with the Markov assumption in place. Basically, the prediction model will be computing something like: _P(next word | bi-gram/tri-gram/etc.)_. 
+
+
+
 
 
 
