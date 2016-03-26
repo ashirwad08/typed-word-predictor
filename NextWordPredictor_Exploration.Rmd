@@ -2,7 +2,10 @@
 title: "Next Word Prediction - Exploratory Analysis"
 author: "Ash Chakraborty"
 date: "March 15, 2016"
-output: html_document
+output: 
+  html_document: 
+    theme: cosmo
+    toc: yes
 ---
 
 ```{r global, echo=FALSE, message=FALSE, warning=FALSE, error=FALSE}
@@ -192,7 +195,7 @@ docSumm2 <- rbind(docSumm2, data.frame(document.source = 'Twitter',
                      types = length(stri_unique(stri_split_fixed(
                              stri_flatten(corp[[3]][[1]])," ", omit_empty = TRUE)[[1]]))))
 
-knitr::kable(docSumm, row.names=NA,align='c', format.args=list(big.mark=','))
+knitr::kable(docSumm2, row.names=NA,align='c', format.args=list(big.mark=','))
 ```  
 
 
@@ -277,7 +280,11 @@ wordcloud(names(freq),freq,min.freq=100)
 
 # Prediction Application  
 
-So far I've settled on using a multi-gram Bayesian model to act as the predictor for the word prediction application. I'll experiment with tri-grams and quad-grams with the Markov assumption in place. Basically, the prediction model will be computing something like: _P(next word | bi-gram/tri-gram/etc.)_. 
+So far I've settled on using a multi-gram Bayesian model to act as the predictor for the word prediction application. I'll experiment with tri-grams and quad-grams with the Markov assumption in place. Basically, the prediction model will be computing something like: _P(next word | bi-gram/tri-gram/etc.)_.  
+
+*End of Report*
+
+[Complete Code May Be Viewed in this Github Location](https://github.com/ashirwad08/typed-word-predictor/blob/master/NextWordPredictor_Exploration.Rmd)
 
 
 
