@@ -1,3 +1,8 @@
 .Rproj.user
 .Rhistory
 .RData
+NextWordPredictor_Exploration_cache/
+NextWordPredictor_Exploration_files/
+rsconnect/
+UI.R
+server.R
