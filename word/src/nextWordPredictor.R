@@ -1,7 +1,20 @@
 library(data.table)
 library(stringi)
 
-filepath <- "/Users/ash/Downloads/final/en_US/"
+#filepath <- "~/Documents/R/Projects/typed-word-predictor/word/data/"
+
+loadGrams <- function(){
+        system.time({
+                
+        unigramDT <- data.table(readRDS('word/data/unigramDT.rds'))
+        bigramDT <- data.table(readRDS('word/data/bigramDT.rds'))
+        trigramDT <- data.table(readRDS('word/data/trigramDT.rds'))
+        
+        setkey(unigramDT, unigrams)
+        setkey(bigramDT, bigrams)
+        setkey(trigramDT, trigrams)
+        })
+}
 
 
 processInput <- function(inputstr){
@@ -26,23 +39,40 @@ processInput <- function(inputstr){
 
 
 
-predict_bigram <- function(stream){
+predict_trigram <- function(stream, unigramDT, bigramDT, trigramDT){
         
-        #load trigram matrix
-        trigramDT <- data.table(readRDS('~/Downloads/temp.rds'))
-        
+
         #for every stream regex+word match in trigram frequency table:
         ##solve: P(word | stream1 stream2) = P(stream1 stream2 | word) * P(word)/P(stream1 & stream2)
         ##which translates to (count of stream+word)*count(word) / count(stream)
         ##without any smoothing
         
-        setkey(trigramDT, trigrams)
+#         setkey(trigramDT, trigrams)
+#         
+#         streamDT <- trigramDT[grep(paste0('^',stream[1],'_',stream[2]), trigrams, value = TRUE), ][order(-freq)]
+#         setkey(streamDT, freq, trigrams)
+# 
+#         potentials <- streamDT[,regmatches(trigrams,
+#                                            regexpr("(?<=_)[A-Za-z]+$",trigrams, perl = TRUE))]
         
-        streamDT <- trigramDT[grep(paste0('^',stream[1],'_',stream[2]), trigrams, value = TRUE), ][order(-freq)]
-        setkey(streamDT, freq, trigrams)
+        workingDT <- unigramDT
+        
+        #create target column from stream (column values are the P(unigram | stream))
+        workingDT[ , paste0(stream[1],'_',stream[2]) := 0]
+        
+        #uses Laplace Smoothing to account for unseen input
+        ###solve: P(word | stream1 stream2) = P(stream1 stream2 | word) * P(word)/P(stream1 & stream2)
+        ## count of (stream1 stream2 word) /count of (stream1 stream2) )
+        ##without any smoothing
+        
+        trifreq <- #for each word in unigram, its stream1_stream2_word
+        bifreq <- bigramDT[.(paste0(stream[1],'_',stream[2])),freq]
+        unifreq <- #freq value of workingDT for each word in workingDT
+        valueateachcell = # [trifreq/length * unifreq/length] / bifreq/length
 
-        potentials <- streamDT[,regmatches(trigrams,
-                                           regexpr("(?<=_)[A-Za-z]+$",trigrams, perl = TRUE))]
+        workingDT[ , paste0(stream[1],'_',stream[2]) := {
+                trigramDT[paste0(stream[1],'_',stream[2],'_',unigrams), freq]/bigramDT[paste0(stream[1],'_',stream[2]),freq]
+        }, by = unigrams]
 
         
         
