@@ -65,17 +65,21 @@ predict_trigram <- function(stream, unigramDT, bigramDT, trigramDT){
         ## count of (stream1 stream2 word) /count of (stream1 stream2) )
         ##without any smoothing
         
-        trifreq <- #for each word in unigram, its stream1_stream2_word
-        bifreq <- bigramDT[.(paste0(stream[1],'_',stream[2])),freq]
-        unifreq <- #freq value of workingDT for each word in workingDT
-        valueateachcell = # [trifreq/length * unifreq/length] / bifreq/length
+        bigramTypes <- bigramDT[,.N-stri_duplicated_any(bigrams)]
+                
+        bifreq <- bigramDT[.(paste0(stream[1],'_',stream[2])),freq] 
+        #apply Laplace Smoothing 
+        ifelse(is.na(bifreq), 
+               #apply laplace smoothing to unigrams?, 
+               trigramDT <- trigramDT[trigrams %like% paste0("^",stream[1],"_",stream[2]), 
+                               prob:=(freq+1)/bifreq][order(-prob)])
 
-        workingDT[ , paste0(stream[1],'_',stream[2]) := {
-                trigramDT[paste0(stream[1],'_',stream[2],'_',unigrams), freq]/bigramDT[paste0(stream[1],'_',stream[2]),freq]
-        }, by = unigrams]
-
+        predictions <- regmatches(trigramDT[,head(trigrams,10)], 
+                                  regexpr("(?<=_)[A-Za-z]+$",
+                                          trigramDT[,head(trigrams,10)], 
+                                          perl = TRUE))
         
-        
+        return(predictions)
         
 }
 
