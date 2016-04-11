@@ -6,11 +6,11 @@ library(stringi)
 loadGrams <- function(){
         system.time({
                 
-        unigramDT <- data.table(readRDS('word/data/unigramDT.rds'))
-        bigramDT <- data.table(readRDS('word/data/bigramDT.rds'))
-        trigramDT <- data.table(readRDS('word/data/trigramDT.rds'))
+        #unigramDT <- data.table(readRDS('word/data/unigramDT.rds'))
+        bigramDT <- data.table(readRDS('data/bigramDT.rds'))
+        trigramDT <- data.table(readRDS('data/trigramDT.rds'))
         
-        setkey(unigramDT, unigrams)
+        #setkey(unigramDT, unigrams)
         setkey(bigramDT, bigrams)
         setkey(trigramDT, trigrams)
         })
@@ -39,8 +39,10 @@ processInput <- function(inputstr){
 
 
 
-predict_trigram <- function(stream, unigramDT, bigramDT, trigramDT){
+predict_trigram <- function(stream, bigramDT, trigramDT){
         
+#         cat('stream[1] = ',stream[1])
+#         cat('stream[2] = ',stream[2])
 
         #for every stream regex+word match in trigram frequency table:
         ##solve: P(word | stream1 stream2) = P(stream1 stream2 | word) * P(word)/P(stream1 & stream2)
@@ -55,31 +57,39 @@ predict_trigram <- function(stream, unigramDT, bigramDT, trigramDT){
 #         potentials <- streamDT[,regmatches(trigrams,
 #                                            regexpr("(?<=_)[A-Za-z]+$",trigrams, perl = TRUE))]
         
-        workingDT <- unigramDT
-        
-        #create target column from stream (column values are the P(unigram | stream))
-        workingDT[ , paste0(stream[1],'_',stream[2]) := 0]
         
         #uses Laplace Smoothing to account for unseen input
         ###solve: P(word | stream1 stream2) = P(stream1 stream2 | word) * P(word)/P(stream1 & stream2)
         ## count of (stream1 stream2 word) /count of (stream1 stream2) )
         ##without any smoothing
         
-        bigramTypes <- bigramDT[,.N-stri_duplicated_any(bigrams)]
+        #bigramTypes <- bigramDT[,.N-stri_duplicated_any(bigrams)]
                 
         bifreq <- bigramDT[.(paste0(stream[1],'_',stream[2])),freq] 
-        #apply Laplace Smoothing 
-        ifelse(is.na(bifreq), 
-               #apply laplace smoothing to unigrams?, 
-               trigramDT <- trigramDT[trigrams %like% paste0("^",stream[1],"_",stream[2]), 
-                               prob:=(freq+1)/bifreq][order(-prob)])
-
-        predictions <- regmatches(trigramDT[,head(trigrams,10)], 
-                                  regexpr("(?<=_)[A-Za-z]+$",
-                                          trigramDT[,head(trigrams,10)], 
-                                          perl = TRUE))
+        tempDT <- trigramDT
         
-        return(predictions)
+        #apply Laplace Smoothing 
+        if(is.na(bifreq)){
+                predictions <- "NA"
+                tempDT[,prob:=0]
+                rm('tempDT')
+                return(predictions)
+        }
+        else{
+                tempDT <- tempDT[trigrams %like% paste0("^",stream[1],"_",stream[2])][,prob:=freq/bifreq][order(-prob)]
+                predictions <- regmatches(tempDT[,head(trigrams,10)], 
+                                          regexpr("(?<=_)[A-Za-z]+$",
+                                          tempDT[,head(trigrams,10)], 
+                                          perl = TRUE))
+                tempDT[,prob:=0]
+                rm('tempDT')
+                return(predictions)
+                
+        }
+#                tempDT <- tempDT[.(trigrams %like% paste0("^",stream[1],"_",stream[2])), 
+#                                prob:=freq/bifreq][order(-prob)])
+                
+        
         
 }
 

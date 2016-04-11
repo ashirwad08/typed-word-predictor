@@ -7,7 +7,7 @@ shinyUI(
                             fluidRow(
                                     column(6, offset=3,
                                            wellPanel(
-                                                   textInput("text", label = h2("Enter Text "),
+                                                   textInput("inputstream", label = h2("Enter Text "),
                                                              value = "Begin typing to see next word suggestions below...")
                                            )
                                     )
@@ -15,7 +15,7 @@ shinyUI(
                             hr(),
                             fluidRow(
                                     column(6, offset = 3,
-                                           "suggested text goes here"
+                                           textOutput("predictions")
                                     )
                             ),
                             fluidRow(
