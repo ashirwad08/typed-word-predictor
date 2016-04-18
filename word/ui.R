@@ -8,14 +8,19 @@ shinyUI(
                                     column(6, offset=3,
                                            wellPanel(
                                                    textInput("inputstream", label = h2("Enter Text "),
-                                                             value = "Begin typing to see next word suggestions below...")
+                                                             value = "Begin typing to see next word suggestions")
                                            )
                                     )
                             ),
                             hr(),
                             fluidRow(
                                     column(6, offset = 3,
-                                           textOutput("predictions")
+                                           tags$div(
+                                                   tags$br(),
+                                                   tags$h2(uiOutput("predictions", inline = TRUE)),
+                                                   tags$hr()
+                                           )
+                                           
                                     )
                             ),
                             fluidRow(

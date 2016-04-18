@@ -1,0 +1,30 @@
+Word! The Next Word Predictor
+========================================================
+author: Ash Chakraborty
+date: April 17, 2016
+
+The Problem: Texting is Slow and Error Prone
+========================================================
+
+Until our phones can process verbal input like *H.A.L. 9000*, **texting** is here to stay!  
+- But! Mobile keyboard apps today either require two hands...
+- or, superflous edits...
+- slowing down the whole typing process, and distracting the *on-the-go* texter!  
+
+
+The Solution: Predict Next... Word
+=======================================================
+
+So, let's speed up this process: Let's *predict* the next word as the texter types!   
+
+This demo app shows how this works.  
+
+
+
+
+Slide With Plot
+========================================================
+
+```{r, echo=FALSE}
+plot(cars)
+```

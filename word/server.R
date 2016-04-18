@@ -17,9 +17,12 @@ shinyServer(function(input, output) {
         # display wordcloud if fast enough (or on generation)
         
      
-          output$predictions <- renderText({
-                  predict_trigram(processInput(input$inputstream),
-                                  bigramDT, trigramDT)
+          output$predictions <- renderUI({
+                  predictions <- predict_trigram(processInput(input$inputstream), bigramDT, trigramDT)
+                  
+                  HTML(paste0('<span style="font-size: 2em !important; color: #009933;">', 
+                              predictions[1], '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;', predictions[2], '&ensp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;', 
+                         predictions[3],'</span>'))
           })      
 #         
 #         
