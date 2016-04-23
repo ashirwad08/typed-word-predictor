@@ -1,7 +1,7 @@
 library(shiny)
 
 shinyUI(
-        navbarPage('Next Word Predictor', inverse = TRUE, collapsible = TRUE,
+        navbarPage('Word! The Next Word Predictor', inverse = TRUE, collapsible = TRUE,
                    
                    tabPanel("Predictor",
                             fluidRow(
@@ -17,7 +17,9 @@ shinyUI(
                                     column(6, offset = 3,
                                            tags$div(
                                                    tags$br(),
-                                                   tags$h2(uiOutput("predictions", inline = TRUE)),
+                                                   tags$h2('Top 3 Predictions...'),
+                                                   tags$h3(uiOutput("predictions", inline = TRUE)),
+                                                   tags$br(),
                                                    tags$hr()
                                            )
                                            
@@ -26,7 +28,7 @@ shinyUI(
                             fluidRow(
                                     column(6, offset = 3,
                                            a("Author: Ash Chakraborty",
-                                             href='http://theintentionalmachine.net/about/')
+                                             href='http://https://www.linkedin.com/in/ashirwadchakraborty/')
                                     )
                             )
                    ),
