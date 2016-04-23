@@ -18,7 +18,7 @@ The Solution: Adaptive Typing! Reduce the Pain
 
 So, speed up this process: *Predict the next word* as the texter types!   
 
-**Word!**, is a proof of concept that demonstrates how this may be achieved, ideally on a mobile or other _on-the-go_ device.  **[Click to see working protoype](http://shinylinkgoeshere)** 
+**Word!**, is a proof of concept that demonstrates how this may be achieved, ideally on a mobile or other _on-the-go_ device.  **[Click to see working protoype](https://ashirwad.shinyapps.io/word/)** 
 
 Advantages:  
 + Increase Typing Speed  
@@ -57,7 +57,7 @@ Potential Enhancements:
 
 
 + [Author Bio](https://www.linkedin.com/in/ashirwadchakraborty)  
-+ [App. Demo](http://shiny)  
++ [App. Demo](https://ashirwad.shinyapps.io/word/)  
 + [App. Code](https://github.com/ashirwad08/typed-word-predictor)  
 + [Author Blog](https://theintentionalmachine.net/)
 

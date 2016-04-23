@@ -3,18 +3,18 @@ library(stringi)
 
 #filepath <- "~/Documents/R/Projects/typed-word-predictor/word/data/"
 
-loadGrams <- function(){
-        system.time({
-                
+
         #unigramDT <- data.table(readRDS('word/data/unigramDT.rds'))
-        bigramDT <- data.table(readRDS('data/bigramDT.rds'))
-        trigramDT <- data.table(readRDS('data/trigramDT.rds'))
+        bigramDT <- data.table(readRDS('./data/bigramdt.rds'))
+        trigramDT <- data.table(readRDS('./data/trigramdt.rds'))
         
         #setkey(unigramDT, unigrams)
         setkey(bigramDT, bigrams)
         setkey(trigramDT, trigrams)
-        })
-}
+        
+        #return(list(bigramDT, trigramDT))
+        
+
 
 
 processInput <- function(inputstr){
@@ -39,7 +39,7 @@ processInput <- function(inputstr){
 
 
 
-predict_trigram <- function(stream, bigramDT, trigramDT){
+predict_trigram <- function(stream){
         
 #         cat('stream[1] = ',stream[1])
 #         cat('stream[2] = ',stream[2])

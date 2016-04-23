@@ -1,4 +1,7 @@
 library(shiny)
+#source("./src/nextWordPredictor.R")
+
+#loadGrams()
 
 shinyUI(
         navbarPage('Word! The Next Word Predictor', inverse = TRUE, collapsible = TRUE,

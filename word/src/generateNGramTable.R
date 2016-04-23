@@ -9,8 +9,8 @@ genTriGrams <- function(filepath){
         news <- readLines(paste0(filepath,"en_US.news.txt"), encoding='UTF-8')
         tweets <- readLines(paste0(filepath,"en_US.twitter.txt"), encoding = 'UTF-8')
         
-        blogs <- sample(blogs, size = length(blogs)*0.1)
-        news <- sample(news, size = length(news)*0.1)
+        blogs <- sample(blogs, size = length(blogs)*0.065)
+        news <- sample(news, size = length(news)*0.05)
         tweets <- sample(tweets, size = length(tweets)*0.1)
         
         
@@ -28,12 +28,12 @@ genTriGrams <- function(filepath){
         corp <- c(blogs, news, tweets)
         
         #unigrams
-        dfm1 <- dfm(corp, 
-                     removeSeparators = TRUE, 
-                     ngrams=1)
-        sortFreq <- sort(colSums(dfm1), decreasing = TRUE)
-        unigramDT <- data.table(unigrams = names(sortFreq), freq = sortFreq)
-        saveRDS(unigramDT, "~/Documents/R/Projects/typed-word-predictor/word/data/unigramDT.rds", compress = TRUE)
+#         dfm1 <- dfm(corp, 
+#                      removeSeparators = TRUE, 
+#                      ngrams=1)
+#         sortFreq <- sort(colSums(dfm1), decreasing = TRUE)
+#         unigramDT <- data.table(unigrams = names(sortFreq), freq = sortFreq)
+#         saveRDS(unigramDT, "./data/unigramDT.rds", compress = TRUE)
         
         #bigrams
         dfm2 <- dfm(corp, 
@@ -41,15 +41,15 @@ genTriGrams <- function(filepath){
                     ngrams=2)
         sortFreq <- sort(colSums(dfm2), decreasing = TRUE)
         bigramDT <- data.table(bigrams = names(sortFreq), freq = sortFreq)
-        saveRDS(bigramDT, "~/Documents/R/Projects/typed-word-predictor/word/data/bigramDT.rds", compress = TRUE)
+        saveRDS(bigramDT, "./data/bigramdt.rds", compress = TRUE)
         
         #trigrams
         dfm3 <- dfm(corp, 
                     removeSeparators = TRUE, 
-                    ngrams=3)
+                    ngrams=3, skipgrams=0:2)
         sortFreq <- sort(colSums(dfm3), decreasing = TRUE)
         trigramDT <- data.table(trigrams = names(sortFreq), freq = sortFreq)
-        saveRDS(trigramDT, "~/Documents/R/Projects/typed-word-predictor/word/data/trigramDT.rds", compress = TRUE)
+        saveRDS(trigramDT, "./data/trigramdt.rds", compress = TRUE)
         
         
         

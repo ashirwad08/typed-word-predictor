@@ -5,7 +5,9 @@ library(stringi)
 library(quanteda)
 
 #source("src/generateNGramTable.R")
-source("src/nextWordPredictor.R")
+source("./src/nextWordPredictor.R")
+
+#loadGrams()
 
 shinyServer(function(input, output) {
         
@@ -18,7 +20,7 @@ shinyServer(function(input, output) {
         
      
           output$predictions <- renderUI({
-                  predictions <- predict_trigram(processInput(input$inputstream), bigramDT, trigramDT)
+                  predictions <- predict_trigram(processInput(input$inputstream))
                   
                   HTML(paste0('<span style="font-size: 2em !important; color: #009933;">', 
                               predictions[1], '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;', predictions[2], '&ensp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;', 
