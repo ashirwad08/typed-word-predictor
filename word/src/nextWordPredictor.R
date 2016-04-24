@@ -7,10 +7,13 @@ library(stringi)
         #unigramDT <- data.table(readRDS('word/data/unigramDT.rds'))
         bigramDT <- data.table(readRDS('./data/bigramdt.rds'))
         trigramDT <- data.table(readRDS('./data/trigramdt.rds'))
+        #quadgramDT <- data.table(readRDS('./data/quadgramdt.rds'))
         
         #setkey(unigramDT, unigrams)
         setkey(bigramDT, bigrams)
         setkey(trigramDT, trigrams)
+        #setkey(quadgramDT, quadgrams)
+        
         
         #return(list(bigramDT, trigramDT))
         
@@ -30,7 +33,7 @@ processInput <- function(inputstr){
         
         strlen <- length(stream[[1]])
         
-        # extract last two tokens for bi-gram based prediction:
+        # extract last three tokens for n-gram based prediction:
         ifelse(strlen<2,
                return(NULL),
                return(stream[[1]][(strlen-1):strlen])
@@ -39,7 +42,7 @@ processInput <- function(inputstr){
 
 
 
-predict_trigram <- function(stream){
+predict_Ngram <- function(stream){
         
 #         cat('stream[1] = ',stream[1])
 #         cat('stream[2] = ',stream[2])
@@ -66,26 +69,42 @@ predict_trigram <- function(stream){
         #bigramTypes <- bigramDT[,.N-stri_duplicated_any(bigrams)]
                 
         bifreq <- bigramDT[.(paste0(stream[1],'_',stream[2])),freq] 
+        #trifreq <- trigramDT[.(paste(stream[1],'_',stream[2],'_',stream[3])),freq]
         tempDT <- trigramDT
         
-        #apply Laplace Smoothing 
+        #apply Laplace Smoothing .. not implemented
         if(is.na(bifreq)){
+                #no bigram match, cannot predict
                 predictions <- "NA"
                 tempDT[,prob:=0]
                 rm('tempDT')
                 return(predictions)
+        } else {
+                #if(is.na(trifreq)){
+                        #no trigram match, first two only. Predict trigram!
+                        #tempDT <- trigramDT
+                        tempDT <- tempDT[trigrams %like% paste0("^",stream[1],"_",stream[2])][,prob:=freq/bifreq][order(-prob)]
+                        predictions <- regmatches(tempDT[,head(trigrams,10)], 
+                                                  regexpr("(?<=_)[A-Za-z]+$",
+                                                          tempDT[,head(trigrams,10)], 
+                                                          perl = TRUE))
+                        tempDT[,prob:=0]
+                        rm('tempDT')
+                        return(predictions)
         }
-        else{
-                tempDT <- tempDT[trigrams %like% paste0("^",stream[1],"_",stream[2])][,prob:=freq/bifreq][order(-prob)]
-                predictions <- regmatches(tempDT[,head(trigrams,10)], 
-                                          regexpr("(?<=_)[A-Za-z]+$",
-                                          tempDT[,head(trigrams,10)], 
-                                          perl = TRUE))
-                tempDT[,prob:=0]
-                rm('tempDT')
-                return(predictions)
-                
-        }
+        
+#         else {
+#                         #there is a trigram match. Predict quadgram!
+#                         tempDT <- quadgramDT
+#                         tempDT <- tempDT[quadgrams %like% paste0("^",stream[1],"_",stream[2],"_",stream[3])][,prob:=freq/trifreq][order(-prob)]
+#                         predictions <- regmatches(tempDT[,head(quadgrams,10)], 
+#                                                   regexpr("(?<=_)[A-Za-z]+$",
+#                                                           tempDT[,head(quadgrams,10)], 
+#                                                           perl = TRUE))
+#                         tempDT[,prob:=0]
+#                         rm('tempDT')
+#                         return(predictions)
+#                 }
 #                tempDT <- tempDT[.(trigrams %like% paste0("^",stream[1],"_",stream[2])), 
 #                                prob:=freq/bifreq][order(-prob)])
                 

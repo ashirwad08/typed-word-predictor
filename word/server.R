@@ -20,7 +20,7 @@ shinyServer(function(input, output) {
         
      
           output$predictions <- renderUI({
-                  predictions <- predict_trigram(processInput(input$inputstream))
+                  predictions <- predict_Ngram(processInput(input$inputstream))
                   
                   HTML(paste0('<span style="font-size: 2em !important; color: #009933;">', 
                               predictions[1], '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;', predictions[2], '&ensp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;', 

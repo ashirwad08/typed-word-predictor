@@ -3,14 +3,14 @@ library(quanteda)
 library(data.table)
 
 
-genTriGrams <- function(filepath){
+genNGrams <- function(filepath){
         
         blogs <- readLines(paste0(filepath,"en_US.blogs.txt"), encoding='UTF-8')
         news <- readLines(paste0(filepath,"en_US.news.txt"), encoding='UTF-8')
         tweets <- readLines(paste0(filepath,"en_US.twitter.txt"), encoding = 'UTF-8')
         
-        blogs <- sample(blogs, size = length(blogs)*0.065)
-        news <- sample(news, size = length(news)*0.05)
+        blogs <- sample(blogs, size = length(blogs)*0.075)
+        news <- sample(news, size = length(news)*0.075)
         tweets <- sample(tweets, size = length(tweets)*0.1)
         
         
@@ -46,15 +46,22 @@ genTriGrams <- function(filepath){
         #trigrams
         dfm3 <- dfm(corp, 
                     removeSeparators = TRUE, 
-                    ngrams=3, skipgrams=0:2)
+                    ngrams=3)
         sortFreq <- sort(colSums(dfm3), decreasing = TRUE)
         trigramDT <- data.table(trigrams = names(sortFreq), freq = sortFreq)
         saveRDS(trigramDT, "./data/trigramdt.rds", compress = TRUE)
         
+        #quadgrams
+#         dfm4 <- dfm(corp,
+#                     removeSeparators = TRUE, 
+#                     ngrams=4)
+#         sortFreq <- sort(colSums(dfm4), decreasing = TRUE)
+#         quadgramDT <- data.table(quadgrams = names(sortFreq), freq = sortFreq)
+#         saveRDS(quadgramDT, "./data/quadgramdt.rds", compress = TRUE)
         
         
         
-        rm(list=c('sortFreq','dfm1','dfm2','dfm3','corp','unigramDT','bigramDT','trigramDT'))
+        rm(list=c('sortFreq','dfm2','dfm3','corp','bigramDT','trigramDT','quadgramDT'))
         
         
         
